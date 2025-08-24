@@ -1,0 +1,276 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: sans-serif;
+}
+
+#game-canvas {
+    display: block;
+}
+
+#ui-container {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    color: white;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 10px;
+    border-radius: 5px;
+}
+
+/* --- New Scoreboard Styles --- */
+#scoreboard {
+    display: flex;
+    justify-content: space-between;
+    width: 260px;
+    padding: 5px 10px;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.score-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.score-label {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #ddd;
+}
+
+.score-markers {
+    display: flex;
+    gap: 6px;
+    height: 18px; /* Reserve space */
+}
+
+.score-marker {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    animation: pop-in 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+}
+
+.score-marker.player {
+    background-color: #4a7de1;
+    box-shadow: 0 0 8px #4a7de1, inset 0 0 4px rgba(255,255,255,0.5);
+}
+
+.score-marker.opponent {
+    background-color: #e12a2a;
+    box-shadow: 0 0 8px #e12a2a, inset 0 0 4px rgba(255,255,255,0.5);
+}
+
+#message {
+    font-size: 18px;
+    text-align: center;
+}
+
+#power-bar-container {
+    position: absolute;
+    bottom: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    max-width: 400px;
+    height: 25px;
+    /* New look with gradient and shadow */
+    background: linear-gradient(to right, #ff4b2b, #ffc107, #4caf50, #ffc107, #ff4b2b);
+    border: 2px solid #333;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.2), inset 0 0 5px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    /* To contain the indicator's glow */
+}
+
+#power-bar-indicator {
+    position: absolute;
+    width: 4px;
+    /* Thinner for precision */
+    height: 120%;
+    /* Taller for overlap effect */
+    top: -10%;
+    background-color: #ffffff;
+    border-radius: 5px;
+    box-shadow: 0 0 10px #fff, 0 0 20px #fff;
+    /* Glow effect */
+    transition: background-color 0.2s ease;
+    /* For hit feedback */
+}
+
+/* Classes for hit feedback */
+.hit-poor {
+    background-color: #ff4b2b !important;
+}
+
+.hit-good {
+    background-color: #ffc107 !important;
+}
+
+.hit-great {
+    background-color: #8bc34a !important;
+}
+
+.hit-super {
+    background-color: #00bcd4 !important;
+    animation: super-hit-flash 0.5s ease-out;
+}
+
+@keyframes super-hit-flash {
+    0% {
+        box-shadow: 0 0 15px #00bcd4, 0 0 30px #00bcd4;
+    }
+
+    50% {
+        box-shadow: 0 0 25px #fff, 0 0 50px #fff;
+    }
+
+    100% {
+        box-shadow: 0 0 15px #00bcd4, 0 0 30px #00bcd4;
+    }
+}
+
+#power-bar-sweet-spot {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 8%;
+    /* Corresponds to the 'great' zone */
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-left: 2px solid rgba(255, 255, 255, 0.7);
+    border-right: 2px solid rgba(255, 255, 255, 0.7);
+    animation: pulse-sweet-spot 2s infinite ease-in-out;
+}
+
+/* Add a smaller, inner sweet spot for 'super' hits */
+#power-bar-sweet-spot::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    transform: translateX(-50%);
+    width: 25%;
+    /* 25% of the parent sweet spot's width (2% of total bar) */
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+#action-text {
+    position: absolute;
+    top: 45%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #ffc107;
+    /* Gold */
+    /* Use clamp for fluid typography that's responsive and has min/max sizes */
+    font-size: clamp(2.5rem, 10vw, 8rem);
+    font-weight: bold;
+    text-shadow: 3px 3px 0px rgba(0, 0, 0, 0.8);
+    pointer-events: none;
+    /* Doesn't block clicks */
+    opacity: 0;
+    z-index: 10;
+    white-space: nowrap;
+    /* Prevents "YOU WIN!" from wrapping on narrow screens */
+}
+
+@keyframes pulse-sweet-spot {
+    0% {
+        box-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
+    }
+
+    50% {
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
+    }
+
+    100% {
+        box-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
+    }
+}
+
+@keyframes pop-in {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* --- Tutorial Overlay --- */
+#tutorial-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    opacity: 1;
+    transition: opacity 0.5s ease;
+}
+
+#tutorial-box {
+    background: #2c2c2c;
+    color: #f0f0f0;
+    padding: 25px 40px;
+    border-radius: 15px;
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#tutorial-title {
+    margin-top: 0;
+    color: #ffc107;
+}
+
+#tutorial-instructions {
+    line-height: 1.6;
+}
+
+#start-game-btn {
+    margin-top: 20px;
+    padding: 12px 25px;
+    font-size: 18px;
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#start-game-btn:hover {
+    background-color: #45a049;
+}
+
+/* --- Responsive Design --- */
+@media (max-width: 768px) {
+    #message {
+        font-size: 16px;
+    }
+
+    #power-bar-container {
+        bottom: 80px;
+        /* Move up for easier access on mobile */
+    }
+
+    #action-text {
+        /* The clamp() function in the main rule handles responsiveness. */
+        /* We can optionally adjust other properties like text-shadow for small screens. */
+        text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.8);
+    }
+}

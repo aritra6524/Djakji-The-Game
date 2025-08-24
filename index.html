@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Djakji - Stable Version</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="ui-container">
+        <div id="scoreboard">
+            <div id="player-score-container" class="score-container">
+                <span class="score-label">Player</span>
+                <div class="score-markers" id="player-score-markers"></div>
+            </div>
+            <div id="opponent-score-container" class="score-container">
+                <span class="score-label">Opponent</span>
+                <div class="score-markers" id="opponent-score-markers"></div>
+            </div>
+        </div>
+        <div id="message"></div>
+    </div>
+    <div id="power-bar-container">
+        <div id="power-bar-indicator"></div>
+        <div id="power-bar-sweet-spot"></div>
+    </div>
+    <div id="action-text"></div>
+    <div id="tutorial-overlay">
+        <div id="tutorial-box">
+            <h2 id="tutorial-title">How to Play</h2>
+            <p id="tutorial-instructions"></p>
+            <button id="start-game-btn">Start Game</button>
+        </div>
+    </div>
+    <canvas id="game-canvas"></canvas>
+
+    <!-- Stable, minimal dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
