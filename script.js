@@ -233,54 +233,65 @@ scene.add(opponentTile);
 // --- Game State & Power Bar ---
 let gameState = 'TUTORIAL'; // Start in tutorial mode
 let playerScore = 0, opponentScore = 0;
-let powerBarTween;
 let gameOverTween;
 
-function startPowerBar() {
-    // Reset any feedback classes from the previous throw
-    powerBarIndicator.className = 'power-bar-indicator'; // Resets to only the base class
-    powerBarIndicator.style.left = '0%';
-    powerBarTween = gsap.to(powerBarIndicator, { 
-        left: 'calc(100% - 4px)', // Adjusted for 4px indicator width
-        duration: 1.2, // Slightly slower for better control
-        ease: 'none', 
-        yoyo: true, 
-        repeat: -1 
-    });
-}
+const powerBar = {
+    tween: null,
+    indicator: document.getElementById('power-bar-indicator'),
+    // Configuration for power levels. Order matters: from best to worst.
+    config: [
+        { quality: 'super', threshold: 1, feedbackClass: 'hit-super' },
+        { quality: 'great', threshold: 4, feedbackClass: 'hit-great' },
+        { quality: 'good', threshold: 20, feedbackClass: 'hit-good' },
+        { quality: 'poor', threshold: 50, feedbackClass: 'hit-poor' } // Threshold of 50 covers the entire bar
+    ],
 
-function stopPowerBar() {
-    powerBarTween.pause();
-    // The indicator is 4px wide, so we subtract that from the parent width for a 0-100 range.
-    const percentage = (powerBarIndicator.offsetLeft / (powerBarIndicator.parentElement.offsetWidth - 4)) * 100;
-    const distanceFromCenter = Math.abs(percentage - 50);
+    start() {
+        this.indicator.className = 'power-bar-indicator'; // Reset visual feedback
+        this.indicator.style.left = '0%';
+        this.tween = gsap.to(this.indicator, {
+            left: 'calc(100% - 4px)', // Adjust for indicator width
+            duration: 1.2,
+            ease: 'none',
+            yoyo: true,
+            repeat: -1
+        });
+    },
 
-    let strength = 0;
-    let quality = 'poor';
-    let feedbackClass = 'hit-poor';
+    stop() {
+        if (this.tween) this.tween.pause();
 
-    if (distanceFromCenter <= 1) { // 2% wide zone for 'super'
-        quality = 'super';
-        strength = 1.0;
-        feedbackClass = 'hit-super';
-    } else if (distanceFromCenter <= 4) { // 8% wide zone for 'great'
-        quality = 'great';
-        strength = 1 - (distanceFromCenter / 50); // Linear falloff
-        feedbackClass = 'hit-great';
-    } else if (distanceFromCenter <= 20) { // 40% wide zone for 'good'
-        quality = 'good';
-        strength = 1 - (distanceFromCenter / 50);
-        feedbackClass = 'hit-good';
-    } else { // The rest is 'poor'
-        quality = 'poor';
-        strength = Math.max(0, 1 - (distanceFromCenter / 50)); // Ensure it doesn't go below 0
+        // Calculate the indicator's position as a percentage (0-100)
+        const parentWidth = this.indicator.parentElement.offsetWidth;
+        const percentage = (this.indicator.offsetLeft / (parentWidth - 4)) * 100;
+        const distanceFromCenter = Math.abs(percentage - 50);
+
+        let result = {};
+
+        // Find the matching quality based on the distance from the center
+        for (const level of this.config) {
+            if (distanceFromCenter <= level.threshold) {
+                result.quality = level.quality;
+                result.feedbackClass = level.feedbackClass;
+                break;
+            }
+        }
+
+        // Strength is calculated as a linear falloff from the center.
+        // A direct hit in the center is 100% (1.0), and it decreases from there.
+        // We use Math.max to ensure strength never goes below zero.
+        result.strength = Math.max(0, 1 - (distanceFromCenter / 50));
+        
+        // Special case for 'super' to guarantee max strength
+        if (result.quality === 'super') {
+            result.strength = 1.0;
+        }
+
+        this.indicator.classList.add(result.feedbackClass);
+
+        return { strength: result.strength, quality: result.quality };
     }
-
-    // Add visual feedback class to the indicator
-    powerBarIndicator.classList.add(feedbackClass);
-
-    return { strength, quality };
-}
+};
 
 function addScoreMarker(isPlayer) {
     const marker = document.createElement('div');
@@ -305,9 +316,9 @@ function handleClick() {
         soundManager.play('click');
         gameState = 'POWERING_UP';
         messageUI.textContent = getInstructionText('Click again to throw!');
-        startPowerBar();
+        powerBar.start();
     } else if (gameState === 'POWERING_UP') {
-        const throwData = stopPowerBar(); // Gets {strength, quality}
+        const throwData = powerBar.stop(); // Gets {strength, quality}
         playerThrow(throwData);
     } else if (gameState === 'GAME_OVER') {
         soundManager.play('click');
@@ -406,13 +417,23 @@ function handleTurn(attacker, defender, strength, isPlayerTurn, quality = null) 
             if (success) {
                 soundManager.play('impactHit');
                 // SUCCESS: Defender tile is flipped
-                // Pop defender up so it can flip on its edge, and pop attacker up high to give clearance.
                 const flipHeight = TILE_WIDTH / 2;
                 gsap.to(defender.position, { y: TILE_Y_REST + flipHeight, duration: 0.15, ease: 'power2.out' });
-                gsap.to(attacker.position, { y: TILE_Y_REST + (flipHeight * 2) + TILE_HEIGHT * 2, duration: 0.2, ease: 'power2.out' });
+                gsap.to(attacker.position, { y: TILE_Y_REST + (flipHeight * 3) + TILE_HEIGHT * 2, duration: 0.2, ease: 'power2.out' });
 
                 gsap.to(defender.rotation, { x: `+=${Math.PI}`, duration: 0.4, ease: 'back.out(1.7)', delay: 0.1 });
                 gsap.to(defender.position, { y: TILE_Y_REST, duration: 0.3, ease: 'bounce.out', delay: 0.2 });
+
+                // Attacker reaction
+                const attackerFlipStrength = Math.random() * strength;
+                if (attackerFlipStrength > 0.5) {
+                    // Full flip
+                    gsap.to(attacker.rotation, { x: `+=${Math.PI}`, duration: 0.4, ease: 'back.out(1.7)', delay: 0.15 });
+                } else {
+                    // Partial flip (wobble)
+                    gsap.to(attacker.rotation, { x: `+=${Math.PI * attackerFlipStrength}`, duration: 0.2, yoyo: true, repeat: 1, ease: 'power2.inOut', delay: 0.15 });
+                }
+
 
                 if (isPlayerTurn) {
                     playerScore++;
